@@ -251,6 +251,8 @@ int use_object_data = 1;
 int enable_ochp = 0;
 int enable_ocsp = 0;
 
+int use_restart_data=1;
+
 char* gearman_server_addr = "127.0.0.1";
 
 int statusengine_process_config_var(char *arg);
@@ -465,6 +467,9 @@ int statusengine_process_config_var(char *arg) {
 	} else if (!strcmp(var, "gearman_server_addr")) {
 		gearman_server_addr = strdup(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] Gearman server address changed");
+	} else if (!strcmp(var, "use_restart_data")) {
+                gearman_server_addr = strdup(val);
+                logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with enabled use_restart_data");
 	} else {
 		return ERROR;
 	}
@@ -547,12 +552,25 @@ int statusengine_handle_data(int event_type, void *data){
 	switch(event_type){
 
 		case NEBCALLBACK_PROCESS_DATA:
-			if(!use_process_data && !use_object_data){
-				return 0;
-			}
 			
 			programmdata=(nebstruct_process_data *)data;
 			if(programmdata == NULL){
+				return 0;
+			}
+
+			if(use_restart_data && programmdata->type == NEBTYPE_PROCESS_START){
+				//Throw event, that monitoring core was started/restarted
+				my_object = json_object_new_object();
+				json_object_object_add(my_object, "object_type",       json_object_new_int(102));
+				const char* json_string_start = json_object_to_json_string(my_object);
+				ret= gearman_client_do_background(&gman_client, "statusngin_core_restart", NULL, (void *)json_string_start, (size_t)strlen(json_string_start), NULL);
+				if (ret != GEARMAN_SUCCESS)
+					logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client));
+
+				json_object_put(my_object);
+			}
+
+			if(!use_process_data && !use_object_data){
 				return 0;
 			}
 

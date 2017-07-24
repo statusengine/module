@@ -255,6 +255,7 @@ int use_restart_data=1;
 int use_service_perfdata=0;
 
 char* gearman_server_addr = "127.0.0.1";
+int gearman_server_port = 4730;
 
 int statusengine_process_config_var(char *arg);
 int statusengine_process_module_args(char *args);
@@ -314,7 +315,7 @@ int nebmodule_init(int flags, char *args, nebmodule *handle){
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] Memory allocation failure on client creation\n");
 	}
 
-	ret= gearman_client_add_server(&gman_client, gearman_server_addr, 4730);
+	ret= gearman_client_add_server(&gman_client, gearman_server_addr, gearman_server_port);
 	if (ret != GEARMAN_SUCCESS){
 		logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client));
 	}
@@ -325,7 +326,7 @@ int nebmodule_init(int flags, char *args, nebmodule *handle){
 			logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] Memory allocation failure on client creation for OCHP/OCSP\n");
 		}
 
-		ret= gearman_client_add_server(&gman_client_ochp, gearman_server_addr, 4730);
+		ret= gearman_client_add_server(&gman_client_ochp, gearman_server_addr, gearman_server_port);
 		if (ret != GEARMAN_SUCCESS){
 			logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client_ochp));
 		}
@@ -468,6 +469,9 @@ int statusengine_process_config_var(char *arg) {
 	} else if (!strcmp(var, "gearman_server_addr")) {
 		gearman_server_addr = strdup(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] Gearman server address changed");
+	} else if (!strcmp(var, "gearman_server_port")) {
+		gearman_server_port = atoi(strdup(val));
+		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] Gearman server port changed");
 	} else if (!strcmp(var, "use_restart_data")) {
 		use_restart_data = atoi(strdup(val));
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with enabled use_restart_data");
@@ -868,7 +872,10 @@ int statusengine_handle_data(int event_type, void *data){
 						SERVICECHECKFIELD_STRING(host_name);
 						SERVICECHECKFIELD_STRING(service_description);
 						SERVICECHECKFIELD_STRING(perf_data);
+						json_object_object_add(servicecheck_object, "start_time", json_object_new_int64(nag_servicecheck->start_time.tv_sec));
 
+						json_object_object_add(my_object, "servicecheck", servicecheck_object);
+						const char* json_string = json_object_to_json_string(my_object);
 						ret= gearman_client_do_background(&gman_client, "statusngin_service_perfdata", NULL, (void *)json_string, (size_t)strlen(json_string), NULL);
 						if (ret != GEARMAN_SUCCESS)
 							logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client));

@@ -252,6 +252,7 @@ int enable_ochp = 0;
 int enable_ocsp = 0;
 
 int use_restart_data=1;
+int use_service_perfdata=0;
 
 char* gearman_server_addr = "127.0.0.1";
 
@@ -468,8 +469,11 @@ int statusengine_process_config_var(char *arg) {
 		gearman_server_addr = strdup(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] Gearman server address changed");
 	} else if (!strcmp(var, "use_restart_data")) {
-                gearman_server_addr = strdup(val);
-                logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with enabled use_restart_data");
+		use_restart_data = atoi(strdup(val));
+		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with enabled use_restart_data");
+	} else if (!strcmp(var, "use_service_perfdata")) {
+		use_service_perfdata = atoi(strdup(val));
+		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with enabled use_service_perfdata");
 	} else {
 		return ERROR;
 	}
@@ -852,6 +856,26 @@ int statusengine_handle_data(int event_type, void *data){
 
 					json_object_put(servicecheck_object);
 					json_object_put(my_object);
+
+					if(use_service_perfdata){
+						my_object = json_object_new_object();
+						json_object_object_add(my_object, "type",      json_object_new_int(servicecheck->type));
+						json_object_object_add(my_object, "flags",     json_object_new_int(servicecheck->flags));
+						json_object_object_add(my_object, "attr",      json_object_new_int(servicecheck->attr));
+						json_object_object_add(my_object, "timestamp", json_object_new_int(servicecheck->timestamp.tv_sec));
+
+						json_object *servicecheck_object = json_object_new_object();
+						SERVICECHECKFIELD_STRING(host_name);
+						SERVICECHECKFIELD_STRING(service_description);
+						SERVICECHECKFIELD_STRING(perf_data);
+
+						ret= gearman_client_do_background(&gman_client, "statusngin_service_perfdata", NULL, (void *)json_string, (size_t)strlen(json_string), NULL);
+						if (ret != GEARMAN_SUCCESS)
+							logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client));
+
+						json_object_put(servicecheck_object);
+						json_object_put(my_object);
+					}
 
 				}
 				break;

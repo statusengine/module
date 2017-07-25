@@ -365,6 +365,10 @@ int nebmodule_deinit(int flags, int reason){
 
 	//Delete gearman client
 	gearman_client_free(&gman_client);
+	
+	if(enable_ochp || enable_ocsp){
+		gearman_client_free(&gman_client_ochp);
+	}
 
 	return 0;
 }
@@ -401,82 +405,82 @@ int statusengine_process_config_var(char *arg) {
 
 	/* process the variable... */
 	if (!strcmp(var, "use_host_status_data")) {
-		use_host_status_data = atoi(strdup(val));
+		use_host_status_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled host_status_data");
 	} else if (!strcmp(var, "use_service_status_data")) {
-		use_service_status_data = atoi(strdup(val));
+		use_service_status_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled service_status_data");
 	} else if (!strcmp(var, "use_process_data")) {
-		use_process_data = atoi(strdup(val));
+		use_process_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled process_data");
 	} else if (!strcmp(var, "use_service_check_data")) {
-		use_service_check_data = atoi(strdup(val));
+		use_service_check_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled service_check_data");
 	} else if (!strcmp(var, "use_host_check_data")) {
-		use_host_check_data = atoi(strdup(val));
+		use_host_check_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled host_check_data");
 	} else if (!strcmp(var, "use_state_change_data")) {
-		use_state_change_data = atoi(strdup(val));
+		use_state_change_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled state_change_data");
 	} else if (!strcmp(var, "use_log_data")) {
-		use_log_data = atoi(strdup(val));
+		use_log_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled log_data");
 	} else if (!strcmp(var, "use_system_command_data")) { 
-		use_system_command_data = atoi(strdup(val));
+		use_system_command_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled system_command_data");
 	} else if (!strcmp(var, "use_comment_data")) {
-		use_comment_data = atoi(strdup(val));
+		use_comment_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled comment_data");
 	} else if (!strcmp(var, "use_external_command_data")) {
-		use_external_command_data = atoi(strdup(val));
+		use_external_command_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled external_command_data");
 	} else if (!strcmp(var, "use_acknowledgement_data")) {
-		use_acknowledgement_data = atoi(strdup(val));
+		use_acknowledgement_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled acknowledgement_data");
 	} else if (!strcmp(var, "use_flapping_data")) { 
-		use_flapping_data = atoi(strdup(val));
+		use_flapping_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled flapping_data");
 	} else if (!strcmp(var, "use_downtime_data")) {
-		use_downtime_data = atoi(strdup(val));
+		use_downtime_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled downtime_data");
 	} else if (!strcmp(var, "use_notification_data")) {
-		use_notification_data = atoi(strdup(val));
+		use_notification_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled notification_data");
 	} else if (!strcmp(var, "use_program_status_data")) {
-		use_program_status_data = atoi(strdup(val));
+		use_program_status_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled program_status_data");
 	} else if (!strcmp(var, "use_contact_status_data")) { 
-		use_contact_status_data = atoi(strdup(val));
+		use_contact_status_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled contact_status_data");
 	} else if (!strcmp(var, "use_contact_notification_data")) { 
-		use_contact_notification_data = atoi(strdup(val));
+		use_contact_notification_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled contact_notification_data");
 	} else if (!strcmp(var, "use_contact_notification_method_data")) {
-		use_contact_notification_method_data = atoi(strdup(val));
+		use_contact_notification_method_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled contact_notification_method_data");
 	} else if (!strcmp(var, "use_event_handler_data")) {
-		use_event_handler_data = atoi(strdup(val));
+		use_event_handler_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled event_handler_data");
 	} else if (!strcmp(var, "enable_ochp")) {
-		enable_ochp = atoi(strdup(val));
+		enable_ochp = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with enabled enable_ochp");
 	} else if (!strcmp(var, "enable_ocsp")) {
-		enable_ocsp = atoi(strdup(val));
+		enable_ocsp = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with enabled enable_ocsp");
 	} else if (!strcmp(var, "use_object_data")) {
-		use_object_data = atoi(strdup(val));
+		use_object_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with enabled use_object_data");
 	} else if (!strcmp(var, "gearman_server_addr")) {
 		gearman_server_addr = strdup(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] Gearman server address changed");
 	} else if (!strcmp(var, "gearman_server_port")) {
-		gearman_server_port = atoi(strdup(val));
+		gearman_server_port = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] Gearman server port changed");
 	} else if (!strcmp(var, "use_restart_data")) {
-		use_restart_data = atoi(strdup(val));
+		use_restart_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with enabled use_restart_data");
 	} else if (!strcmp(var, "use_service_perfdata")) {
-		use_service_perfdata = atoi(strdup(val));
+		use_service_perfdata = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with enabled use_service_perfdata");
 	} else {
 		return ERROR;

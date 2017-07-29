@@ -17,12 +17,12 @@
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
 * as published by the Free Software Foundation in version 2
-* 
+*
 * This program is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 * GNU General Public License for more details.
-* 
+*
 * You should have received a copy of the GNU General Public License
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -55,7 +55,7 @@
 *
 * Compile with the following command for Nagios 4
 * LANG=C gcc -shared -DNAGIOS -o statusengine.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson-c
-* 
+*
 * Compile on Debian 7
 * apt-get install libgearman-dev gearman-tools uuid-dev php5 php5-cli php5-dev libjson0-dev manpages-dev build-essential
 * LANG=C gcc -shared -DNAEMON -o statusengine.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson -DDEBIAN7
@@ -72,7 +72,7 @@
 * NEBCALLBACK_AGGREGATED_STATUS_DATA
 * NEBCALLBACK_RETENTION_DATA
 * NEBCALLBACK_TIMED_EVENT_DATA
-* 
+*
 *
 * Have fun :-)
 *
@@ -270,7 +270,7 @@ int nebmodule_init(int flags, char *args, nebmodule *handle){
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_TITLE,   "Statusengine - the missing event broker");
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_AUTHOR,  "Daniel Ziegler");
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_TITLE,   "Copyright (c) 2014 - present Daniel Ziegler");
-	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_VERSION, "2.0.4");
+	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_VERSION, "3.0.0");
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_LICENSE, "GPL v2");
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_DESC,    "A powerful and flexible event broker");
 
@@ -308,7 +308,7 @@ int nebmodule_init(int flags, char *args, nebmodule *handle){
 	neb_register_callback(NEBCALLBACK_CONTACT_NOTIFICATION_DATA,        statusengine_module_handle, 0, statusengine_handle_data);
 	neb_register_callback(NEBCALLBACK_CONTACT_NOTIFICATION_METHOD_DATA, statusengine_module_handle, 0, statusengine_handle_data);
 	neb_register_callback(NEBCALLBACK_EVENT_HANDLER_DATA,               statusengine_module_handle, 0, statusengine_handle_data);
-	
+
 
 	//Create gearman client
 	if (gearman_client_create(&gman_client) == NULL){
@@ -319,7 +319,7 @@ int nebmodule_init(int flags, char *args, nebmodule *handle){
 	if (ret != GEARMAN_SUCCESS){
 		logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client));
 	}
-	
+
 	if(enable_ochp || enable_ocsp){
 		//Create gearman client for ochp/ocsp
 		if (gearman_client_create(&gman_client_ochp) == NULL){
@@ -365,7 +365,7 @@ int nebmodule_deinit(int flags, int reason){
 
 	//Delete gearman client
 	gearman_client_free(&gman_client);
-	
+
 	if(enable_ochp || enable_ocsp){
 		gearman_client_free(&gman_client_ochp);
 	}
@@ -425,7 +425,7 @@ int statusengine_process_config_var(char *arg) {
 	} else if (!strcmp(var, "use_log_data")) {
 		use_log_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled log_data");
-	} else if (!strcmp(var, "use_system_command_data")) { 
+	} else if (!strcmp(var, "use_system_command_data")) {
 		use_system_command_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled system_command_data");
 	} else if (!strcmp(var, "use_comment_data")) {
@@ -437,7 +437,7 @@ int statusengine_process_config_var(char *arg) {
 	} else if (!strcmp(var, "use_acknowledgement_data")) {
 		use_acknowledgement_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled acknowledgement_data");
-	} else if (!strcmp(var, "use_flapping_data")) { 
+	} else if (!strcmp(var, "use_flapping_data")) {
 		use_flapping_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled flapping_data");
 	} else if (!strcmp(var, "use_downtime_data")) {
@@ -449,10 +449,10 @@ int statusengine_process_config_var(char *arg) {
 	} else if (!strcmp(var, "use_program_status_data")) {
 		use_program_status_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled program_status_data");
-	} else if (!strcmp(var, "use_contact_status_data")) { 
+	} else if (!strcmp(var, "use_contact_status_data")) {
 		use_contact_status_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled contact_status_data");
-	} else if (!strcmp(var, "use_contact_notification_data")) { 
+	} else if (!strcmp(var, "use_contact_notification_data")) {
 		use_contact_notification_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] start with disabled contact_notification_data");
 	} else if (!strcmp(var, "use_contact_notification_method_data")) {
@@ -564,7 +564,7 @@ int statusengine_handle_data(int event_type, void *data){
 	switch(event_type){
 
 		case NEBCALLBACK_PROCESS_DATA:
-			
+
 			programmdata=(nebstruct_process_data *)data;
 			if(programmdata == NULL){
 				return 0;
@@ -592,7 +592,7 @@ int statusengine_handle_data(int event_type, void *data){
 					dump_object_data();
 				}
 			}
-			
+
 			if(!use_process_data){
 				return 0;
 			}
@@ -849,13 +849,13 @@ int statusengine_handle_data(int event_type, void *data){
 
 					json_object_object_add(my_object, "servicecheck", servicecheck_object);
 					const char* json_string = json_object_to_json_string(my_object);
-					
+
 					if(use_service_check_data){
 						ret= gearman_client_do_background(&gman_client, "statusngin_servicechecks", NULL, (void *)json_string, (size_t)strlen(json_string), NULL);
 						if (ret != GEARMAN_SUCCESS)
 							logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client));
 					}
-					
+
 					if(enable_ocsp){
 						ret= gearman_client_do_background(&gman_client_ochp, "statusngin_ocsp", NULL, (void *)json_string, (size_t)strlen(json_string), NULL);
 						if (ret != GEARMAN_SUCCESS)
@@ -945,13 +945,13 @@ int statusengine_handle_data(int event_type, void *data){
 
 					json_object_object_add(my_object, "hostcheck", hostcheck_object);
 					const char* json_string = json_object_to_json_string(my_object);
-					
+
 					if(use_host_check_data){
 						ret= gearman_client_do_background(&gman_client, "statusngin_hostchecks", NULL, (void *)json_string, (size_t)strlen(json_string), NULL);
 						if (ret != GEARMAN_SUCCESS)
 							logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client));
 					}
-					
+
 					if(enable_ochp){
 						ret= gearman_client_do_background(&gman_client_ochp, "statusngin_ochp", NULL, (void *)json_string, (size_t)strlen(json_string), NULL);
 						if (ret != GEARMAN_SUCCESS)
@@ -2185,4 +2185,3 @@ void dump_object_data(){
 	json_object_put(my_object);
 
 }
-

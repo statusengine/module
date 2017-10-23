@@ -81,7 +81,7 @@
 *
 **********************************************************************************/
 
-#if !defined NAEMON && !defined NAGIOS && !defined NAEMON105 && !defined NAEMONMASTER
+#if !defined NAEMON && !defined NAGIOS && !defined NAEMON105 && !defined NAEMONMASTER && !defined NAGIOS410
 #error Please define either NAEMON or NAGIOS using -DNAEMON or -DNAEMON105 or -DNAGIOS or -DNAEMONMASTER command line options.
 #endif
 
@@ -566,7 +566,13 @@ int statusengine_handle_data(int event_type, void *data){
 	nebstruct_external_command_data            *extcommand         = NULL;
 	nebstruct_acknowledgement_data             *acknowledgement    = NULL;
 	nebstruct_flapping_data                    *_flapping          = NULL;
+#if defined NAEMON || defined NAGIOS || defined NAEMON105 || defined NAEMONMASTER
 	comment                                    *tmp_comment        = NULL;
+#endif
+
+#if defined NAGIOS410
+	nagios_comment                             *tmp_comment        = NULL;
+#endif
 	nebstruct_downtime_data                    *_downtime          = NULL;
 	nebstruct_notification_data                *notificationdata   = NULL;
 	nebstruct_program_status_data              *procstats          = NULL;

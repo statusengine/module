@@ -1,4 +1,4 @@
-all: bin/nagios/statusengine.o bin/naemon/statusengine.o bin/naemon/statusengine-1-0-5.o
+all: bin/nagios/statusengine.o bin/naemon/statusengine.o bin/naemon/statusengine-1-0-5.o bin/nagios/statusengine-4-1-0.o
 
 bin/nagios/statusengine.o: statusengine.c
 	mkdir -p bin/nagios

@@ -53,8 +53,11 @@
 * apt-get install libglib2.0-dev
 * LANG=C gcc -shared -o statusengine.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson-c -lglib-2.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -lglib-2.0 -DNAEMONMASTER
 *
-* Compile with the following command for Nagios 4
+* Compile with the following command for Nagios 4 <= 4.0.8
 * LANG=C gcc -shared -DNAGIOS -o statusengine.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson-c
+*
+* Compile with the following command for Nagios 4 >= 4.1.0
+* LANG=C gcc -shared -DNAGIOS410 -o statusengine.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson-c
 *
 * Compile on Debian 7
 * apt-get install libgearman-dev gearman-tools uuid-dev php5 php5-cli php5-dev libjson0-dev manpages-dev build-essential
@@ -145,6 +148,19 @@
 #include "../include/macros.h"
 #endif
 
+#ifdef NAGIOS410
+#include "../include_4.1.0/nebmodules.h"
+#include "../include_4.1.0/nebcallbacks.h"
+#include "../include_4.1.0/nebstructs.h"
+#include "../include_4.1.0/broker.h"
+#include "../include_4.1.0/config.h"
+#include "../include_4.1.0/common.h"
+#include "../include_4.1.0/nagios.h"
+#include "../include_4.1.0/downtime.h"
+#include "../include_4.1.0/comments.h"
+#include "../include_4.1.0/macros.h"
+#endif
+
 //Load external libs
 #include <libgearman/gearman.h>
 
@@ -179,7 +195,7 @@ extern servicedependency *servicedependency_list;
 
 extern char *config_file;
 
-#if defined NAEMON || defined NAGIOS
+#if defined NAEMON || defined NAGIOS || defined NAGIOS410
 extern sched_info scheduling_info;
 #endif
 
@@ -200,7 +216,7 @@ void dump_object_data();
 
 
 void logswitch(int level, char *message){
-#ifdef NAGIOS
+#if defined NAGIOS || defined NAGIOS410
 	write_to_all_logs(message, level);
 #endif
 #if defined NAEMON || defined NAEMON105 || defined NAEMONMASTER
@@ -609,7 +625,7 @@ int statusengine_handle_data(int event_type, void *data){
 				#else
 				json_object_object_add(processdata_object, "programmname",      json_object_new_string("Nagios"));
 				#endif
-				#if defined NAGIOS || defined NAEMON
+				#if defined NAGIOS || defined NAEMON || defined NAGIOS410
 					json_object_object_add(processdata_object, "modification_data", json_object_new_string(get_program_modification_date()));
 				#endif
 				#if defined NAEMON105 || defined NAEMONMASTER
@@ -659,7 +675,7 @@ int statusengine_handle_data(int event_type, void *data){
 					HOSTFIELD_STRING(check_period);
 					HOSTFIELD_INT(current_state);
 					HOSTFIELD_INT(has_been_checked);
-					#if defined NAGIOS || defined NAEMON
+					#if defined NAGIOS || defined NAEMON || defined NAGIOS410
 					HOSTFIELD_INT(should_be_scheduled);
 					#endif
 					#if defined NAEMON105 || defined NAEMONMASTER
@@ -740,7 +756,7 @@ int statusengine_handle_data(int event_type, void *data){
 					SERVICEFIELD_STRING(check_period);
 					SERVICEFIELD_INT(current_state);
 					SERVICEFIELD_INT(has_been_checked);
-					#if defined NAGIOS || defined NAEMON
+					#if defined NAGIOS || defined NAEMON || defined NAGIOS410
 					SERVICEFIELD_INT(should_be_scheduled);
 					#endif
 					#if defined NAEMON105 || defined NAEMONMASTER
@@ -821,7 +837,7 @@ int statusengine_handle_data(int event_type, void *data){
 					SERVICECHECKFIELD_STRING(host_name);
 					SERVICECHECKFIELD_STRING(service_description);
 
-					#if defined NAGIOS || defined NAEMON
+					#if defined NAGIOS || defined NAEMON || defined NAGIOS410
 					get_raw_command_line(nag_service->check_command_ptr,nag_service->check_command,&raw_command,0);
 					#endif
 					#if defined NAEMON105 || defined NAEMONMASTER
@@ -917,7 +933,7 @@ int statusengine_handle_data(int event_type, void *data){
 
 					HOSTCHECKFIELD_STRING(host_name);
 
-					#if defined NAGIOS || defined NAEMON
+					#if defined NAGIOS || defined NAEMON || defined NAGIOS410
 					get_raw_command_line(nag_host->check_command_ptr,nag_host->check_command,&raw_command,0);
 					#endif
 					#if defined NAEMON105 || defined NAEMONMASTER
@@ -1575,7 +1591,7 @@ void dump_object_data(){
 	service *temp_service=NULL;
 	servicegroup *temp_servicegroup=NULL;
 
-	#if defined NAEMON || defined NAGIOS
+	#if defined NAEMON || defined NAGIOS || defined NAGIOS410
 	hostescalation *temp_hostescalation=NULL;
 	serviceescalation *temp_serviceescalation=NULL;
 	hostdependency *temp_hostdependency=NULL;
@@ -1823,7 +1839,7 @@ void dump_object_data(){
 		//Get parent hosts
 		json_object *parent_hosts_array = json_object_new_array();
 
-		#if defined NAGIOS || defined NAEMON
+		#if defined NAGIOS || defined NAEMON || defined NAGIOS410
 		hostsmember *temp_hostsmember = temp_host->parent_hosts;
 		for(temp_hostsmember = temp_host->parent_hosts; temp_hostsmember != NULL; temp_hostsmember = temp_hostsmember->next){
 			json_object_array_add(parent_hosts_array, (temp_hostsmember->host_name != NULL ? json_object_new_string(temp_hostsmember->host_name) : NULL));
@@ -1880,7 +1896,7 @@ void dump_object_data(){
 
 		//Get members
 		json_object *hostgroup_members_array = json_object_new_array();
-		#if defined NAGIOS || defined NAEMON
+		#if defined NAGIOS || defined NAEMON || defined NAGIOS410
 		hostsmember *temp_hostsmember = temp_hostgroup->members;
 		for(temp_hostsmember = temp_hostgroup->members; temp_hostsmember != NULL; temp_hostsmember = temp_hostsmember->next){
 			json_object_array_add(hostgroup_members_array, (temp_hostsmember->host_name != NULL ? json_object_new_string(temp_hostsmember->host_name) : NULL));
@@ -2034,7 +2050,7 @@ void dump_object_data(){
 
 	}
 
-	#if defined NAEMON || defined NAGIOS
+	#if defined NAEMON || defined NAGIOS || defined NAGIOS410
 	//Fetch host escalations
 	logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] Dumping host escalation configuration");
 	for(x = 0; x < num_objects.hostescalations; x++){

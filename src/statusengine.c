@@ -191,8 +191,6 @@ extern char *global_service_event_handler;
 gearman_return_t ret; //remove me!!!
 gearman_client_st gman_client;
 
-gearman_client_st gman_client_ochp;
-
 void *statusengine_module_handle = NULL;
 
 int statusengine_handle_data(int, void *);
@@ -320,18 +318,6 @@ int nebmodule_init(int flags, char *args, nebmodule *handle){
 		logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client));
 	}
 
-	if(enable_ochp || enable_ocsp){
-		//Create gearman client for ochp/ocsp
-		if (gearman_client_create(&gman_client_ochp) == NULL){
-			logswitch(NSLOG_INFO_MESSAGE, "[Statusengine] Memory allocation failure on client creation for OCHP/OCSP\n");
-		}
-
-		ret= gearman_client_add_server(&gman_client_ochp, gearman_server_addr, gearman_server_port);
-		if (ret != GEARMAN_SUCCESS){
-			logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client_ochp));
-		}
-	}
-
 	return 0;
 }
 
@@ -365,10 +351,6 @@ int nebmodule_deinit(int flags, int reason){
 
 	//Delete gearman client
 	gearman_client_free(&gman_client);
-
-	if(enable_ochp || enable_ocsp){
-		gearman_client_free(&gman_client_ochp);
-	}
 
 	return 0;
 }
@@ -857,9 +839,9 @@ int statusengine_handle_data(int event_type, void *data){
 					}
 
 					if(enable_ocsp){
-						ret= gearman_client_do_background(&gman_client_ochp, "statusngin_ocsp", NULL, (void *)json_string, (size_t)strlen(json_string), NULL);
+						ret= gearman_client_do_background(&gman_client, "statusngin_ocsp", NULL, (void *)json_string, (size_t)strlen(json_string), NULL);
 						if (ret != GEARMAN_SUCCESS)
-							logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client_ochp));
+							logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client));
 					}
 
 					json_object_put(servicecheck_object);
@@ -953,9 +935,9 @@ int statusengine_handle_data(int event_type, void *data){
 					}
 
 					if(enable_ochp){
-						ret= gearman_client_do_background(&gman_client_ochp, "statusngin_ochp", NULL, (void *)json_string, (size_t)strlen(json_string), NULL);
+						ret= gearman_client_do_background(&gman_client, "statusngin_ochp", NULL, (void *)json_string, (size_t)strlen(json_string), NULL);
 						if (ret != GEARMAN_SUCCESS)
-							logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client_ochp));
+							logswitch(NSLOG_INFO_MESSAGE, (char *)gearman_client_error(&gman_client));
 					}
 
 					json_object_put(hostcheck_object);

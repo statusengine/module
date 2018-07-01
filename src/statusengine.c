@@ -385,6 +385,20 @@ int nebmodule_init(int flags, char *args, nebmodule *handle){
 		return ERROR;
 	}
 
+	// add server if none has been defined
+	if (gearman_server_num == 0) {
+		char default_server[256];
+		sprintf(default_server, "%s:%i", gearman_server_addr, gearman_server_port);
+		statusengine_add_server(&gearman_server_num, gearman_server_list, default_server);
+	}
+
+	// create gearman clients
+	logswitch(NSLOG_INFO_MESSAGE, "create %i gearman client(s)\n", gearman_server_num);
+	int i;
+	for (i=0; i<gearman_server_num; i++) {
+		statusengine_create_client(i, gearman_server_list);
+	}
+
 	//Register callbacks
 	logswitch(NSLOG_INFO_MESSAGE, "Register callbacks");
 	neb_register_callback(NEBCALLBACK_HOST_STATUS_DATA,                 statusengine_module_handle, 0, statusengine_handle_data);
@@ -406,21 +420,6 @@ int nebmodule_init(int flags, char *args, nebmodule *handle){
 	neb_register_callback(NEBCALLBACK_CONTACT_NOTIFICATION_DATA,        statusengine_module_handle, 0, statusengine_handle_data);
 	neb_register_callback(NEBCALLBACK_CONTACT_NOTIFICATION_METHOD_DATA, statusengine_module_handle, 0, statusengine_handle_data);
 	neb_register_callback(NEBCALLBACK_EVENT_HANDLER_DATA,               statusengine_module_handle, 0, statusengine_handle_data);
-
-
-	// add server if none has been defined
-	if (gearman_server_num == 0) {
-		char default_server[256];
-		sprintf(default_server, "%s:%d", gearman_server_addr, gearman_server_port);
-		statusengine_add_server(&gearman_server_num, gearman_server_list, default_server);
-	}
-
-	// create gearman clients
-	logswitch(NSLOG_INFO_MESSAGE, "create %i gearman client(s)\n", gearman_server_num);
-	int i;
-	for (i=0; i<gearman_server_num; i++) {
-		statusengine_create_client(i, gearman_server_list);
-	}
 
 	return 0;
 }

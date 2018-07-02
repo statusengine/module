@@ -206,6 +206,9 @@ int gearman_server_num = 0;
 char* gearman_server_addr = "127.0.0.1";
 int gearman_server_port = 4730;
 
+// logging (only for non log_entries events to prevent loop segfaults)
+int do_logging = 1;
+
 
 void *statusengine_module_handle = NULL;
 
@@ -214,6 +217,11 @@ void dump_object_data();
 
 
 void logswitch(int level, char *message, ...){
+	// don't log when logging is disabled to prevent log loop segfaults
+	if (!do_logging) {
+		return;
+	}
+
 	char buffer[65536];
 	va_list ap;
 
@@ -330,30 +338,36 @@ int statusengine_send_job(char * queue, char * data) {
 		if (ret != GEARMAN_SUCCESS) {
 			gettimeofday(&now,NULL);
 
-			// log first error
-			if (gearman_server_list[i]->errors == 0) {
+			// log and count first error
+			if (gearman_server_list[i]->errors == 0 && do_logging) {
 				gettimeofday(&gearman_server_list[i]->error_time,NULL);
+				gearman_server_list[i]->errors++;
 				logswitch(NSLOG_INFO_MESSAGE, "sending to gearmand %s failed: %s\n", gearman_server_list[i]->server, (char *)gearman_client_error(gearman_server_list[i]->client));
 			}
-			// repeat connection error every minute
-			else if( now.tv_sec >= gearman_server_list[i]->error_time.tv_sec + 60) {
+			// repeat connection error every minute and count it
+			else if(now.tv_sec >= gearman_server_list[i]->error_time.tv_sec + 60 && do_logging) {
 				gettimeofday(&gearman_server_list[i]->error_time,NULL);
+				gearman_server_list[i]->errors++;
 				logswitch(NSLOG_INFO_MESSAGE, "sending to gearmand %s failed: %s (%i jobs lost so far)\n", gearman_server_list[i]->server, (char *)gearman_client_error(gearman_server_list[i]->client), gearman_server_list[i]->errors);
 			}
-			// inc couter
-			gearman_server_list[i]->errors++;
+			// always count following errors
+			else if(gearman_server_list[i]->errors > 0) {
+				gearman_server_list[i]->errors++;
+			}
 
 			// recreate client
 			gearman_client_free(gearman_server_list[i]->client);
 			statusengine_create_client(i, gearman_server_list);
 			final = ERROR;
 		} else {
-			// log successful reconnect
-			if (gearman_server_list[i]->errors > 0) {
+			// log successful reconnect (but only when logging is enabled)
+			// reset only when logging is enabled, so we get really get a log message
+			if (gearman_server_list[i]->errors > 0 && do_logging) {
 				logswitch(NSLOG_INFO_MESSAGE, "successfull reconnected to gearmand %s (%i lost jobs)\n", gearman_server_list[i]->server, gearman_server_list[i]->errors);
+
+				// reset if ok
+				gearman_server_list[i]->errors = 0;
 			}
-			// reset if ok
-			gearman_server_list[i]->errors = 0;
 		}
 	}
 	return final;
@@ -656,6 +670,9 @@ int statusengine_handle_data(int event_type, void *data){
 	nebstruct_contact_notification_method_data *cnm                = NULL;
 	nebstruct_event_handler_data               *event_handler_data = NULL;
 	json_object *my_object;
+
+	// always reset logging
+	do_logging = 1;
 
 	switch(event_type){
 
@@ -1100,6 +1117,10 @@ int statusengine_handle_data(int event_type, void *data){
 					if(logentry == NULL){
 						return 0;
 					}
+					// don't create log messages that would create log loops (Segfault)
+					// when gearman-job-server dies
+					do_logging = 0;
+
 					my_object = json_object_new_object();
 					json_object_object_add(my_object, "type",      json_object_new_int(logentry->type));
 					json_object_object_add(my_object, "flags",     json_object_new_int(logentry->flags));

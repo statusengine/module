@@ -962,6 +962,7 @@ int statusengine_handle_data(int event_type, void *data){
 
 					json_object_put(servicecheck_object);
 					json_object_put(my_object);
+					free(raw_command);
 
 					if(use_service_perfdata){
 						my_object = json_object_new_object();
@@ -1050,6 +1051,7 @@ int statusengine_handle_data(int event_type, void *data){
 
 					json_object_put(hostcheck_object);
 					json_object_put(my_object);
+					free(raw_command);
 
 				}
 				break;

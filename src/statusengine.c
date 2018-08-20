@@ -582,10 +582,12 @@ int statusengine_process_config_var(char *arg) {
 		logswitch(NSLOG_INFO_MESSAGE, "Gearman server port changed: %i", gearman_server_port);
 	} else if (!strcmp(var, "gearman_server_list")) {
 		logswitch(NSLOG_INFO_MESSAGE, "Gearman server address list changed: %s", val);
-		char *servername;
-		while ( (servername = strsep( &val, ";" )) != NULL ) {
-			statusengine_add_server(&gearman_server_num, gearman_server_list, servername);
-		}
+        } else if (!strcmp(var, "gearman_dup_server_list")) {
+                logswitch(NSLOG_INFO_MESSAGE, "Gearman duplicate server address list changed: %s", val);
+                char *servername;
+                while ( (servername = strsep( &val, "," )) != NULL ) {
+                        statusengine_add_server(&gearman_server_num, gearman_server_list, servername);
+                }
 	} else if (!strcmp(var, "use_restart_data")) {
 		use_restart_data = atoi(val);
 		logswitch(NSLOG_INFO_MESSAGE, "start with enabled use_restart_data");

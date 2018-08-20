@@ -234,7 +234,7 @@ void logswitch(int level, char *message, ...){
 	va_end( ap );
 
 #ifdef NAGIOS
-	write_to_all_logs(buffer, level);
+	logit(level, TRUE, "%s", message);
 #endif
 #if defined NAEMON || defined NAEMON105 || defined NAEMONMASTER
 	nm_log(level, "%s", buffer);

@@ -579,7 +579,7 @@ int statusengine_process_config_var(char *arg) {
 		logswitch(NSLOG_INFO_MESSAGE, "Gearman server address changed: %s", val);
 	} else if (!strcmp(var, "gearman_server_port")) {
 		gearman_server_port = atoi(val);
-		logswitch(NSLOG_INFO_MESSAGE, "Gearman server port changed: %i", val);
+		logswitch(NSLOG_INFO_MESSAGE, "Gearman server port changed: %i", gearman_server_port);
 	} else if (!strcmp(var, "gearman_server_list")) {
 		logswitch(NSLOG_INFO_MESSAGE, "Gearman server address list changed: %s", val);
 		char *servername;

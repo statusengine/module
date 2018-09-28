@@ -209,6 +209,32 @@ int gearman_server_port = 4730;
 // logging (only for non log_entries events to prevent loop segfaults)
 int do_logging = 1;
 
+//Bulk cache
+#define BULK_SIZE 10
+#define BULK_TIMEOUT 10
+int last_servicestatus_bulk_flush;
+int last_hoststatus_bulk_flush;
+int last_servicechecks_bulk_flush;
+int last_serviceperfdata_bulk_flush;
+int last_hostchecks_bulk_flush;
+int last_statechanges_bulk_flush;
+int last_logentries_bulk_flush;
+int last_externalcommands_bulk_flush;
+int last_acknowledgements_bulk_flush;
+int last_downtimes_bulk_flush;
+int last_objets_bulk_flush;
+
+json_object *servicestatus_bulk_cache;
+json_object *hoststatus_bulk_cache;
+json_object *servicechecks_bulk_cache;
+json_object *serviceperfdata_bulk_cache;
+json_object *hostchecks_bulk_cache;
+json_object *statechanges_bulk_cache;
+json_object *logentries_bulk_cache;
+json_object *externalcommands_bulk_cache;
+json_object *acknowledgements_bulk_cache;
+json_object *downtimes_bulk_cache;
+json_object *objects_bulk_cache;
 
 void *statusengine_module_handle = NULL;
 
@@ -289,6 +315,7 @@ int use_service_perfdata=0;
 
 int statusengine_process_config_var(char *arg);
 int statusengine_process_module_args(char *args);
+
 
 // add server to list
 void statusengine_add_server(int * server_num, gman_server_t * server_list[GMAN_MAX_SERVERS], char * server) {
@@ -378,6 +405,29 @@ int nebmodule_init(int flags, char *args, nebmodule *handle){
 
 	//Save handle
 	statusengine_module_handle = handle;
+
+	servicestatus_bulk_cache = json_object_new_array();
+	last_servicestatus_bulk_flush = (int)time(NULL);
+	hoststatus_bulk_cache = json_object_new_array();
+	last_hoststatus_bulk_flush = (int)time(NULL);
+	servicechecks_bulk_cache = json_object_new_array();
+	last_servicechecks_bulk_flush = (int)time(NULL);
+	serviceperfdata_bulk_cache = json_object_new_array();
+	last_serviceperfdata_bulk_flush = (int)time(NULL);
+	hostchecks_bulk_cache = json_object_new_array();
+	last_hostchecks_bulk_flush = (int)time(NULL);
+	statechanges_bulk_cache = json_object_new_array();
+	last_statechanges_bulk_flush = (int)time(NULL);
+	logentries_bulk_cache = json_object_new_array();
+	last_logentries_bulk_flush = (int)time(NULL);
+	externalcommands_bulk_cache = json_object_new_array();
+	last_externalcommands_bulk_flush = (int)time(NULL);
+	acknowledgements_bulk_cache = json_object_new_array();
+	last_acknowledgements_bulk_flush = (int)time(NULL);
+	downtimes_bulk_cache = json_object_new_array();
+	last_downtimes_bulk_flush = (int)time(NULL);
+	objects_bulk_cache = json_object_new_array();
+	last_objets_bulk_flush = (int)time(NULL);
 
 	//I guess nagios don't use this?
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_TITLE,   "Statusengine - the missing event broker");
@@ -600,6 +650,271 @@ int statusengine_process_config_var(char *arg) {
 	return OK;
 }
 
+void flush_servicestatus_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", servicestatus_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+	statusengine_send_job("statusngin_servicestatus", (void *)json_string);
+
+	json_object_put(servicestatus_bulk_cache);
+	json_object_put(msg);
+	servicestatus_bulk_cache = json_object_new_array();
+	last_servicestatus_bulk_flush = (int)time(NULL);
+}
+
+void flush_hoststatus_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", hoststatus_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+	statusengine_send_job("statusngin_hoststatus", (void *)json_string);
+
+	json_object_put(hoststatus_bulk_cache);
+	json_object_put(msg);
+	hoststatus_bulk_cache = json_object_new_array();
+	last_hoststatus_bulk_flush = (int)time(NULL);
+}
+
+void flush_servicechecks_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", servicechecks_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+
+	if(use_service_check_data){
+		statusengine_send_job("statusngin_servicechecks", (void *)json_string);
+	}
+
+	if(enable_ocsp){
+		statusengine_send_job("statusngin_ocsp", (void *)json_string);
+	}
+
+	json_object_put(servicechecks_bulk_cache);
+	json_object_put(msg);
+	servicechecks_bulk_cache = json_object_new_array();
+	last_servicechecks_bulk_flush = (int)time(NULL);
+}
+
+void flush_serviceperfdata_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", serviceperfdata_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+	statusengine_send_job("statusngin_service_perfdata", (void *)json_string);
+
+	json_object_put(serviceperfdata_bulk_cache);
+	json_object_put(msg);
+	serviceperfdata_bulk_cache = json_object_new_array();
+	last_serviceperfdata_bulk_flush = (int)time(NULL);
+}
+
+void flush_hostchecks_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", hostchecks_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+	if(use_host_check_data)
+		statusengine_send_job("statusngin_hostchecks", (void *)json_string);
+
+	if(enable_ochp)
+		statusengine_send_job("statusngin_ochp", (void *)json_string);
+
+	json_object_put(hostchecks_bulk_cache);
+	json_object_put(msg);
+	hostchecks_bulk_cache = json_object_new_array();
+	last_hostchecks_bulk_flush = (int)time(NULL);
+}
+
+void flush_statechanges_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", statechanges_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+	statusengine_send_job("statusngin_statechanges", (void *)json_string);
+
+	json_object_put(statechanges_bulk_cache);
+	json_object_put(msg);
+	statechanges_bulk_cache = json_object_new_array();
+	last_statechanges_bulk_flush = (int)time(NULL);
+}
+
+void flush_logentries_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", logentries_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+	statusengine_send_job("statusngin_logentries", (void *)json_string);
+
+	json_object_put(logentries_bulk_cache);
+	json_object_put(msg);
+	logentries_bulk_cache = json_object_new_array();
+	last_logentries_bulk_flush = (int)time(NULL);
+}
+
+void flush_externalcommands_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", externalcommands_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+	statusengine_send_job("statusngin_externalcommands", (void *)json_string);
+
+	json_object_put(externalcommands_bulk_cache);
+	json_object_put(msg);
+	externalcommands_bulk_cache = json_object_new_array();
+	last_externalcommands_bulk_flush = (int)time(NULL);
+}
+
+void flush_acknowledgements_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", acknowledgements_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+	statusengine_send_job("statusngin_acknowledgements", (void *)json_string);
+
+	json_object_put(acknowledgements_bulk_cache);
+	json_object_put(msg);
+	acknowledgements_bulk_cache = json_object_new_array();
+	last_acknowledgements_bulk_flush = (int)time(NULL);
+}
+
+void flush_downtimes_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", downtimes_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+	statusengine_send_job("statusngin_downtimes", (void *)json_string);
+
+	json_object_put(downtimes_bulk_cache);
+	json_object_put(msg);
+	downtimes_bulk_cache = json_object_new_array();
+	last_downtimes_bulk_flush = (int)time(NULL);
+}
+
+void flush_objects_cache(){
+	json_object *msg = json_object_new_object();
+	json_object_object_add(msg, "messages", objects_bulk_cache);
+
+	const char* json_string = json_object_to_json_string(msg);
+	statusengine_send_job("statusngin_objects", (void *)json_string);
+
+	json_object_put(objects_bulk_cache);
+	json_object_put(msg);
+	objects_bulk_cache = json_object_new_array();
+	last_objets_bulk_flush = (int)time(NULL);
+}
+
+void force_flush_objects_cache(){
+	if(json_object_array_length(objects_bulk_cache) > 0){
+		flush_objects_cache();
+	}
+}
+
+void check_all_caches(){
+	if(json_object_array_length(servicestatus_bulk_cache) > BULK_SIZE || last_servicestatus_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+		if(json_object_array_length(servicestatus_bulk_cache) > 0){
+			flush_servicestatus_cache();
+		}
+	}
+	
+	if(json_object_array_length(servicechecks_bulk_cache) > BULK_SIZE || last_servicechecks_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+		if(json_object_array_length(servicechecks_bulk_cache) > 0){
+			flush_servicechecks_cache();
+		}
+	}
+	
+	if(json_object_array_length(serviceperfdata_bulk_cache) > BULK_SIZE || last_serviceperfdata_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+		if(json_object_array_length(serviceperfdata_bulk_cache) > 0){
+			flush_serviceperfdata_cache();
+		}
+	}
+	
+	if(json_object_array_length(servicestatus_bulk_cache) > BULK_SIZE || last_servicestatus_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+		if(json_object_array_length(servicestatus_bulk_cache) > 0){
+			flush_hostchecks_cache();
+		}
+	}
+	
+	if(json_object_array_length(hostchecks_bulk_cache) > BULK_SIZE || last_hostchecks_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+		if(json_object_array_length(hostchecks_bulk_cache) > 0){
+			flush_statechanges_cache();
+		}
+	}
+	
+	if(json_object_array_length(logentries_bulk_cache) > BULK_SIZE || last_logentries_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+		if(json_object_array_length(logentries_bulk_cache) > 0){
+			flush_logentries_cache();
+		}
+	}
+	
+	if(json_object_array_length(externalcommands_bulk_cache) > BULK_SIZE || last_externalcommands_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+		if(json_object_array_length(externalcommands_bulk_cache) > 0){
+			flush_externalcommands_cache();
+		}
+	}
+	
+	if(json_object_array_length(acknowledgements_bulk_cache) > BULK_SIZE || last_acknowledgements_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+		if(json_object_array_length(acknowledgements_bulk_cache) > 0){
+			flush_acknowledgements_cache();
+		}
+	}
+	
+	if(json_object_array_length(downtimes_bulk_cache) > BULK_SIZE || last_downtimes_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+		if(json_object_array_length(downtimes_bulk_cache) > 0){
+			flush_downtimes_cache();
+		}
+	}
+	
+	if(json_object_array_length(objects_bulk_cache) > BULK_SIZE || last_objets_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+		if(json_object_array_length(objects_bulk_cache) > 0){
+			flush_objects_cache();
+		}
+	}
+}
+
+void force_flush_all_caches(){
+	if(json_object_array_length(servicestatus_bulk_cache) > 0){
+		flush_servicestatus_cache();
+	}
+
+	if(json_object_array_length(servicechecks_bulk_cache) > 0){
+		flush_servicechecks_cache();
+	}
+
+	if(json_object_array_length(serviceperfdata_bulk_cache) > 0){
+		flush_serviceperfdata_cache();
+	}
+
+	if(json_object_array_length(hostchecks_bulk_cache) > 0){
+		flush_hostchecks_cache();
+	}
+
+	if(json_object_array_length(statechanges_bulk_cache) > 0){
+		flush_statechanges_cache();
+	}
+	
+	if(json_object_array_length(logentries_bulk_cache) > 0){
+		flush_logentries_cache();
+	}
+
+	if(json_object_array_length(externalcommands_bulk_cache) > 0){
+		flush_externalcommands_cache();
+	}
+
+	if(json_object_array_length(acknowledgements_bulk_cache) > 0){
+		flush_acknowledgements_cache();
+	}
+
+	if(json_object_array_length(downtimes_bulk_cache) > 0){
+		flush_downtimes_cache();
+	}
+
+	if(json_object_array_length(objects_bulk_cache) > 0){
+		flush_objects_cache();
+	}
+}
+
+
 
 #define HOSTFIELD_STRING(FIELD) \
 	json_object_object_add(host_object, #FIELD, (nag_hoststatus->FIELD != NULL ? json_object_new_string(nag_hoststatus->FIELD) : NULL))
@@ -694,6 +1009,8 @@ int statusengine_handle_data(int event_type, void *data){
 
 				json_object_put(my_object);
 			}
+			
+			check_all_caches();
 
 			if(!use_process_data && !use_object_data){
 				return 0;
@@ -704,6 +1021,11 @@ int statusengine_handle_data(int event_type, void *data){
 				if(use_object_data){
 					dump_object_data();
 				}
+			}
+			
+			//Avoid data loss on process restart
+			if(programmdata->type == NEBTYPE_PROCESS_SHUTDOWN){
+				force_flush_all_caches();
 			}
 
 			if(!use_process_data){
@@ -891,12 +1213,10 @@ int statusengine_handle_data(int event_type, void *data){
 					SERVICEFIELD_DOUBLE(retry_interval);
 
 					json_object_object_add(my_object, "servicestatus", service_object);
-					const char* json_string = json_object_to_json_string(my_object);
-					statusengine_send_job("statusngin_servicestatus", (void *)json_string);
-
-					json_object_put(service_object);
-					json_object_put(my_object);
-
+					json_object_array_add(servicestatus_bulk_cache, my_object);
+					if(json_object_array_length(servicestatus_bulk_cache) > BULK_SIZE || last_servicestatus_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+						flush_servicestatus_cache();
+					}
 				}
 				break;
 
@@ -954,16 +1274,11 @@ int statusengine_handle_data(int event_type, void *data){
 
 
 					json_object_object_add(my_object, "servicecheck", servicecheck_object);
-					const char* json_string = json_object_to_json_string(my_object);
-
-					if(use_service_check_data)
-						statusengine_send_job("statusngin_servicechecks", (void *)json_string);
-
-					if(enable_ocsp)
-						statusengine_send_job("statusngin_ocsp", (void *)json_string);
-
-					json_object_put(servicecheck_object);
-					json_object_put(my_object);
+					json_object_array_add(servicechecks_bulk_cache, my_object);
+					if(json_object_array_length(servicechecks_bulk_cache) > BULK_SIZE || last_servicechecks_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+						flush_servicechecks_cache();
+					}
+					
 					free(raw_command);
 
 					if(use_service_perfdata){
@@ -980,11 +1295,10 @@ int statusengine_handle_data(int event_type, void *data){
 						json_object_object_add(servicecheck_object, "start_time", json_object_new_int64(nag_servicecheck->start_time.tv_sec));
 
 						json_object_object_add(my_object, "servicecheck", servicecheck_object);
-						const char* json_string = json_object_to_json_string(my_object);
-						statusengine_send_job("statusngin_service_perfdata", (void *)json_string);
-
-						json_object_put(servicecheck_object);
-						json_object_put(my_object);
+						json_object_array_add(serviceperfdata_bulk_cache, my_object);
+						if(json_object_array_length(serviceperfdata_bulk_cache) > BULK_SIZE || last_serviceperfdata_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+							flush_serviceperfdata_cache();
+						}
 					}
 
 				}
@@ -1043,16 +1357,10 @@ int statusengine_handle_data(int event_type, void *data){
 
 
 					json_object_object_add(my_object, "hostcheck", hostcheck_object);
-					const char* json_string = json_object_to_json_string(my_object);
-
-					if(use_host_check_data)
-						statusengine_send_job("statusngin_hostchecks", (void *)json_string);
-
-					if(enable_ochp)
-						statusengine_send_job("statusngin_ochp", (void *)json_string);
-
-					json_object_put(hostcheck_object);
-					json_object_put(my_object);
+					json_object_array_add(hostchecks_bulk_cache, my_object);
+					if(json_object_array_length(hostchecks_bulk_cache) > BULK_SIZE || last_hostchecks_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+						flush_hostchecks_cache();
+					}
 					free(raw_command);
 
 				}
@@ -1107,11 +1415,10 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(statechange_object, "last_hard_state", json_object_new_int64(last_hard_state));
 
 					json_object_object_add(my_object, "statechange", statechange_object);
-					const char* json_string = json_object_to_json_string(my_object);
-					statusengine_send_job("statusngin_statechanges", (void *)json_string);
-
-					json_object_put(statechange_object);
-					json_object_put(my_object);
+					json_object_array_add(statechanges_bulk_cache, my_object);
+					if(json_object_array_length(statechanges_bulk_cache) > BULK_SIZE || last_statechanges_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+						flush_statechanges_cache();
+					}
 				}
 				break;
 
@@ -1138,11 +1445,10 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(logentry_object, "data", (logentry->data != NULL ? json_object_new_string(logentry->data) : NULL));
 
 					json_object_object_add(my_object, "logentry", logentry_object);
-					const char* json_string = json_object_to_json_string(my_object);
-					statusengine_send_job("statusngin_logentries", (void *)json_string);
-
-					json_object_put(logentry_object);
-					json_object_put(my_object);
+					json_object_array_add(logentries_bulk_cache, my_object);
+					if(json_object_array_length(logentries_bulk_cache) > BULK_SIZE || last_logentries_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+						flush_logentries_cache();
+					}
 				}
 				break;
 
@@ -1238,11 +1544,10 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(extcommand_object, "entry_time",     json_object_new_int64(extcommand->entry_time));
 
 					json_object_object_add(my_object, "externalcommand", extcommand_object);
-					const char* json_string = json_object_to_json_string(my_object);
-					statusengine_send_job("statusngin_externalcommands", (void *)json_string);
-
-					json_object_put(extcommand_object);
-					json_object_put(my_object);
+					json_object_array_add(externalcommands_bulk_cache, my_object);
+					if(json_object_array_length(externalcommands_bulk_cache) > BULK_SIZE || last_externalcommands_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+						flush_externalcommands_cache();
+					}
 				}
 				break;
 
@@ -1271,11 +1576,10 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(acknowledgement_object, "notify_contacts",      json_object_new_int64(acknowledgement->notify_contacts));
 
 					json_object_object_add(my_object, "acknowledgement", acknowledgement_object);
-					const char* json_string = json_object_to_json_string(my_object);
-					statusengine_send_job("statusngin_acknowledgements", (void *)json_string);
-
-					json_object_put(acknowledgement_object);
-					json_object_put(my_object);
+					json_object_array_add(acknowledgements_bulk_cache, my_object);
+					if(json_object_array_length(acknowledgements_bulk_cache) > BULK_SIZE || last_acknowledgements_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+						flush_acknowledgements_cache();
+					}
 				}
 				break;
 
@@ -1359,11 +1663,10 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(downtime_object, "duration",      json_object_new_double(_downtime->duration));
 
 					json_object_object_add(my_object, "downtime", downtime_object);
-					const char* json_string = json_object_to_json_string(my_object);
-					statusengine_send_job("statusngin_downtimes", (void *)json_string);
-
-					json_object_put(downtime_object);
-					json_object_put(my_object);
+					json_object_array_add(downtimes_bulk_cache, my_object);
+					if(json_object_array_length(downtimes_bulk_cache) > BULK_SIZE || last_downtimes_bulk_flush < ((int)time(NULL) - BULK_TIMEOUT)){
+						flush_downtimes_cache();
+					}
 				}
 				break;
 
@@ -1660,10 +1963,8 @@ void dump_object_data(){
 	//Tell the woker, that were start object dumping
 	my_object = json_object_new_object();
 	json_object_object_add(my_object, "object_type",       json_object_new_int(100));
-	const char* json_string_start = json_object_to_json_string(my_object);
-	statusengine_send_job("statusngin_objects", (void *)json_string_start);
-
-	json_object_put(my_object);
+	json_object_array_add(objects_bulk_cache, my_object);
+	force_flush_objects_cache();
 
 	logswitch(NSLOG_INFO_MESSAGE, "Dumping command configuration");
 	for(temp_command = command_list; temp_command != NULL; temp_command = temp_command->next){
@@ -1672,12 +1973,9 @@ void dump_object_data(){
 		json_object_object_add(my_object, "command_name", json_object_new_string(temp_command->name));
 		json_object_object_add(my_object, "command_line", json_object_new_string(temp_command->command_line));
 
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
-
+		json_object_array_add(objects_bulk_cache, my_object);
 	}
+	force_flush_objects_cache();
 
 	//Fetch timeperiods
 	//Logging that we dump commands right now
@@ -1706,12 +2004,10 @@ void dump_object_data(){
 		}
 
 		json_object_object_add(my_object, "timeranges", timeranges);
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
-
+		
+		json_object_array_add(objects_bulk_cache, my_object);
 	}
+	force_flush_objects_cache();
 
 	//Fetch contact configuration
 	logswitch(NSLOG_INFO_MESSAGE, "Dumping contact configuration");
@@ -1781,13 +2077,10 @@ void dump_object_data(){
 		}
 
 		json_object_object_add(my_object, "service_commands", servicecommands_array);
-
-
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
+		
+		json_object_array_add(objects_bulk_cache, my_object);
 	}
+	force_flush_objects_cache();
 
 	//Fetch contact group configuration
 	logswitch(NSLOG_INFO_MESSAGE, "Dumping contact group configuration");
@@ -1805,12 +2098,10 @@ void dump_object_data(){
 			json_object_array_add(contactgroup_contact_members_array, (temp_contactsmember->contact_name != NULL ? json_object_new_string(temp_contactsmember->contact_name) : NULL));
 		}
 		json_object_object_add(my_object, "contact_members", contactgroup_contact_members_array);
-
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
+		
+		json_object_array_add(objects_bulk_cache, my_object);
 	}
+	force_flush_objects_cache();
 
 	//Fetch host configuration
 	logswitch(NSLOG_INFO_MESSAGE, "Dumping host configuration");
@@ -1916,11 +2207,12 @@ void dump_object_data(){
 
 		json_object_object_add(my_object, "custom_variables", host_customvariables);
 
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
+		json_object_array_add(objects_bulk_cache, my_object);
+		if(json_object_array_length(objects_bulk_cache) > BULK_SIZE){
+			flush_objects_cache();
+		}
 	}
+	force_flush_objects_cache();
 
 	//Fetch hostgroup configuration
 	logswitch(NSLOG_INFO_MESSAGE, "Dumping host group configuration");
@@ -1943,12 +2235,13 @@ void dump_object_data(){
 		#endif
 
 		json_object_object_add(my_object, "members", hostgroup_members_array);
-
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
+		
+		json_object_array_add(objects_bulk_cache, my_object);
+		if(json_object_array_length(objects_bulk_cache) > BULK_SIZE){
+			flush_objects_cache();
+		}
 	}
+	force_flush_objects_cache();
 
 
 	//Fetch service configuration
@@ -2043,11 +2336,12 @@ void dump_object_data(){
 		}
 		json_object_object_add(my_object, "custom_variables", service_customvariables);
 
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
+		json_object_array_add(objects_bulk_cache, my_object);
+		if(json_object_array_length(objects_bulk_cache) > BULK_SIZE){
+			flush_objects_cache();
+		}
 	}
+	force_flush_objects_cache();
 
 	//Fetch service groups
 	logswitch(NSLOG_INFO_MESSAGE, "Dumping service group configuration");
@@ -2068,12 +2362,13 @@ void dump_object_data(){
 		}
 		json_object_object_add(my_object, "members", servicegroupmember_array);
 
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
-
+		json_object_array_add(objects_bulk_cache, my_object);
+		if(json_object_array_length(objects_bulk_cache) > BULK_SIZE){
+			flush_objects_cache();
+		}
 	}
+	force_flush_objects_cache();
+
 
 	#if defined NAEMON || defined NAGIOS
 	//Fetch host escalations
@@ -2109,11 +2404,12 @@ void dump_object_data(){
 		}
 		json_object_object_add(my_object, "contacts", contacts_array);
 
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
+		json_object_array_add(objects_bulk_cache, my_object);
+		if(json_object_array_length(objects_bulk_cache) > BULK_SIZE){
+			flush_objects_cache();
+		}
 	}
+	force_flush_objects_cache();
 
 	//Fetch service escalations
 	logswitch(NSLOG_INFO_MESSAGE, "Dumping servcie escalation configuration");
@@ -2150,11 +2446,12 @@ void dump_object_data(){
 		}
 		json_object_object_add(my_object, "contacts", contacts_array);
 
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
+		json_object_array_add(objects_bulk_cache, my_object);
+		if(json_object_array_length(objects_bulk_cache) > BULK_SIZE){
+			flush_objects_cache();
+		}
 	}
+	force_flush_objects_cache();
 
 	logswitch(NSLOG_INFO_MESSAGE, "Dumping host dependency configuration");
 	for(x = 0; x < num_objects.hostdependencies; x++){
@@ -2172,11 +2469,12 @@ void dump_object_data(){
 		json_object_object_add(my_object, "fail_on_down",        json_object_new_int64(flag_isset(temp_hostdependency->failure_options, OPT_DOWN)));
 		json_object_object_add(my_object, "fail_on_unreachable", json_object_new_int64(flag_isset(temp_hostdependency->failure_options, OPT_UNREACHABLE)));
 
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
+		json_object_array_add(objects_bulk_cache, my_object);
+		if(json_object_array_length(objects_bulk_cache) > BULK_SIZE){
+			flush_objects_cache();
+		}
 	}
+	force_flush_objects_cache();
 
 	logswitch(NSLOG_INFO_MESSAGE, "Dumping service dependency configuration");
 	for(x = 0; x < num_objects.servicedependencies; x++){
@@ -2199,20 +2497,19 @@ void dump_object_data(){
 		json_object_object_add(my_object, "fail_on_unknown",  json_object_new_int64(flag_isset(temp_servicedependency->failure_options, OPT_UNKNOWN)));
 		json_object_object_add(my_object, "fail_on_critical", json_object_new_int64(flag_isset(temp_servicedependency->failure_options, OPT_CRITICAL)));
 
-		const char* json_string = json_object_to_json_string(my_object);
-		statusengine_send_job("statusngin_objects", (void *)json_string);
-
-		json_object_put(my_object);
+		json_object_array_add(objects_bulk_cache, my_object);
+		if(json_object_array_length(objects_bulk_cache) > BULK_SIZE){
+			flush_objects_cache();
+		}
 	}
+	force_flush_objects_cache();
 	#endif
 
 
 	//Tell the woker, that were done with object dumping
 	my_object = json_object_new_object();
 	json_object_object_add(my_object, "object_type",       json_object_new_int(101));
-	const char* json_string = json_object_to_json_string(my_object);
-	statusengine_send_job("statusngin_objects", (void *)json_string);
-	json_object_put(my_object);
-
+	
+	json_object_array_add(objects_bulk_cache, my_object);
+	force_flush_objects_cache();
 }
-

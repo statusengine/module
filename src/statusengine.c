@@ -1025,6 +1025,7 @@ int statusengine_handle_data(int event_type, void *data){
 			
 			//Avoid data loss on process restart
 			if(programmdata->type == NEBTYPE_PROCESS_SHUTDOWN){
+				logswitch(NSLOG_INFO_MESSAGE, "Caught shutdown. Flush all bulk caches.");
 				force_flush_all_caches();
 			}
 

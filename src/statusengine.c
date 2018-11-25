@@ -361,6 +361,7 @@ int statusengine_create_client(int i, gman_server_t *server_list[GMAN_MAX_SERVER
 
     // attach server
     gearman_return_t ret = gearman_client_add_servers(server_list[i]->client, server_list[i]->server);
+    //logswitch(NSLOG_INFO_MESSAGE, "Attach server to client %s", server_list[i]->server);
     if (ret != GEARMAN_SUCCESS) {
         logswitch(NSLOG_INFO_MESSAGE, "couldn't attach server %s to client: %s", server_list[i]->server,
                   (char *) gearman_client_error(server_list[i]->client));
@@ -661,6 +662,7 @@ int statusengine_process_config_var(char *arg) {
         logswitch(NSLOG_INFO_MESSAGE, "Gearman server port changed: %i", gearman_server_port);
     } else if (!strcmp(var, "gearman_server_list")) {
         logswitch(NSLOG_INFO_MESSAGE, "Gearman server address list changed: %s", val);
+        statusengine_add_server(&gearman_server_num, gearman_server_list, val);
     } else if (!strcmp(var, "gearman_dup_server_list")) {
         logswitch(NSLOG_INFO_MESSAGE, "Gearman duplicate server address list changed: %s", val);
         char *servername;

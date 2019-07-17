@@ -149,6 +149,7 @@
 #include <libgearman/gearman.h>
 #include <stdarg.h>
 #include <sys/time.h>
+#include <iconv.h>
 
 #ifdef DEBIAN7
 #include <json/json.h>
@@ -258,6 +259,125 @@ static gboolean hostgroup_foreach_callback(gpointer key, gpointer _hostgroupmemb
         return FALSE;
 }
 #endif
+
+/**
+* Many many many thanks to Christoph
+* https://stackoverflow.com/a/1031773
+*/
+int is_utf8(const char * string){
+	if(!string){
+		return 0;
+	}
+	
+	const unsigned char * bytes = (const unsigned char *)string;
+	while(*bytes){
+		if( (// ASCII
+			 // use bytes[0] <= 0x7F to allow ASCII control characters
+				bytes[0] == 0x09 ||
+				bytes[0] == 0x0A ||
+				bytes[0] == 0x0D ||
+				(0x20 <= bytes[0] && bytes[0] <= 0x7E)
+			)
+		) {
+			bytes += 1;
+			continue;
+		}
+
+		if( (// non-overlong 2-byte
+				(0xC2 <= bytes[0] && bytes[0] <= 0xDF) &&
+				(0x80 <= bytes[1] && bytes[1] <= 0xBF)
+			)
+		) {
+			bytes += 2;
+			continue;
+		}
+
+		if( (// excluding overlongs
+				bytes[0] == 0xE0 &&
+				(0xA0 <= bytes[1] && bytes[1] <= 0xBF) &&
+				(0x80 <= bytes[2] && bytes[2] <= 0xBF)
+			) ||
+			(// straight 3-byte
+				((0xE1 <= bytes[0] && bytes[0] <= 0xEC) ||
+					bytes[0] == 0xEE ||
+					bytes[0] == 0xEF) &&
+				(0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
+				(0x80 <= bytes[2] && bytes[2] <= 0xBF)
+			) ||
+			(// excluding surrogates
+				bytes[0] == 0xED &&
+				(0x80 <= bytes[1] && bytes[1] <= 0x9F) &&
+				(0x80 <= bytes[2] && bytes[2] <= 0xBF)
+			)
+		) {
+			bytes += 3;
+			continue;
+		}
+
+		if( (// planes 1-3
+				bytes[0] == 0xF0 &&
+				(0x90 <= bytes[1] && bytes[1] <= 0xBF) &&
+				(0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
+				(0x80 <= bytes[3] && bytes[3] <= 0xBF)
+			) ||
+			(// planes 4-15
+				(0xF1 <= bytes[0] && bytes[0] <= 0xF3) &&
+				(0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
+				(0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
+				(0x80 <= bytes[3] && bytes[3] <= 0xBF)
+			) ||
+			(// plane 16
+				bytes[0] == 0xF4 &&
+				(0x80 <= bytes[1] && bytes[1] <= 0x8F) &&
+				(0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
+				(0x80 <= bytes[3] && bytes[3] <= 0xBF)
+			)
+		) {
+			bytes += 4;
+			continue;
+		}
+
+		return 0;
+	}
+
+	return 1;
+}
+
+void iso88959_to_utf8(char *iso_buf, char *utf8_buf){
+	size_t inbytesleft = strlen(iso_buf);
+	size_t outbytesleft = inbytesleft * 4 + 1;
+
+	// iconv will fuck up utf8_buf so we pass out_buf
+	char *out_buf = utf8_buf;
+
+	// converting ISO-8859-1 to UTF-8.
+	iconv_t iconv_cd = iconv_open("UTF-8//TRANSLIT//IGNORE", "ISO-8859-1");
+	if(iconv_cd == (iconv_t)-1){
+		logswitch(NSLOG_INFO_MESSAGE, "Error on iconv_open");
+	}
+
+	size_t chars = iconv(iconv_cd, &iso_buf, &inbytesleft, &out_buf, &outbytesleft);
+	
+	if(chars == -1){
+		logswitch(NSLOG_INFO_MESSAGE, "Error on converting to UTF-8!");
+	}
+}
+
+json_object* encode_to_utf8_json_string(char *input_buf){
+	if(is_utf8(input_buf)) {
+		return json_object_new_string(input_buf);
+	} else {
+		char *iso_buf = calloc(strlen(input_buf)+1, sizeof(char));
+		strcpy(iso_buf, input_buf);
+		char *utf8_buf = calloc((strlen(input_buf)+1)* 5, sizeof(char));
+		iso88959_to_utf8(iso_buf, utf8_buf);
+		json_object *result = json_object_new_string(utf8_buf);
+		free(iso_buf);
+		free(utf8_buf);
+		return result;
+	}
+}
+
 
 int use_host_status_data = 1;
 int use_service_status_data = 1;
@@ -610,6 +730,9 @@ int statusengine_process_config_var(char *arg) {
 #define HOSTFIELD_DOUBLE(FIELD) \
 	json_object_object_add(host_object, #FIELD, json_object_new_double(nag_hoststatus->FIELD))
 
+#define HOSTFIELD_STRING_UTF8(FIELD) \
+	json_object_object_add(host_object, #FIELD, (nag_hoststatus->FIELD != NULL ? encode_to_utf8_json_string(nag_hoststatus->FIELD) : NULL))
+
 #define SERVICEFIELD_STRING(FIELD) \
 	json_object_object_add(service_object, #FIELD, (nag_servicestatus->FIELD != NULL ? json_object_new_string(nag_servicestatus->FIELD) : NULL))
 
@@ -618,6 +741,9 @@ int statusengine_process_config_var(char *arg) {
 
 #define SERVICEFIELD_DOUBLE(FIELD) \
 	json_object_object_add(service_object, #FIELD, json_object_new_double(nag_servicestatus->FIELD))
+
+#define SERVICEFIELD_STRING_UTF8(FIELD) \
+	json_object_object_add(service_object, #FIELD, (nag_servicestatus->FIELD != NULL ? encode_to_utf8_json_string(nag_servicestatus->FIELD) : NULL))
 
 #define SERVICECHECKFIELD_STRING(FIELD) \
 	json_object_object_add(servicecheck_object, #FIELD, (nag_servicecheck->FIELD != NULL ? json_object_new_string(nag_servicecheck->FIELD) : NULL))
@@ -628,6 +754,9 @@ int statusengine_process_config_var(char *arg) {
 #define SERVICECHECKFIELD_DOUBLE(FIELD) \
 	json_object_object_add(servicecheck_object, #FIELD, json_object_new_double(nag_servicecheck->FIELD))
 
+#define SERVICECHECKFIELD_STRING_UTF8(FIELD) \
+	json_object_object_add(servicecheck_object, #FIELD, (nag_servicecheck->FIELD != NULL ? encode_to_utf8_json_string(nag_servicecheck->FIELD) : NULL))
+
 #define HOSTCHECKFIELD_STRING(FIELD) \
 	json_object_object_add(hostcheck_object, #FIELD, (nag_hostcheck->FIELD != NULL ? json_object_new_string(nag_hostcheck->FIELD) : NULL))
 
@@ -637,11 +766,17 @@ int statusengine_process_config_var(char *arg) {
 #define HOSTCHECKFIELD_DOUBLE(FIELD) \
 	json_object_object_add(hostcheck_object, #FIELD, json_object_new_double(nag_hostcheck->FIELD))
 
+#define HOSTCHECKFIELD_STRING_UTF8(FIELD) \
+	json_object_object_add(hostcheck_object, #FIELD, (nag_hostcheck->FIELD != NULL ? encode_to_utf8_json_string(nag_hostcheck->FIELD) : NULL))
+
 #define STATECHANGE_STRING(FIELD) \
 	json_object_object_add(statechange_object, #FIELD, (statechange->FIELD != NULL ? json_object_new_string(statechange->FIELD) : NULL))
 
 #define STATECHANGE_INT(FIELD) \
 	json_object_object_add(statechange_object, #FIELD, json_object_new_int64(statechange->FIELD))
+
+#define STATECHANGE_STRING_UTF8(FIELD) \
+	json_object_object_add(statechange_object, #FIELD, (statechange->FIELD != NULL ? encode_to_utf8_json_string(statechange->FIELD) : NULL))
 
 //Handle callback data
 int statusengine_handle_data(int event_type, void *data){
@@ -762,8 +897,8 @@ int statusengine_handle_data(int event_type, void *data){
 					}
 
 					HOSTFIELD_STRING(name);
-					HOSTFIELD_STRING(plugin_output);
-					HOSTFIELD_STRING(long_plugin_output);
+					HOSTFIELD_STRING_UTF8(plugin_output);
+					HOSTFIELD_STRING_UTF8(long_plugin_output);
 					HOSTFIELD_STRING(event_handler);
 					HOSTFIELD_STRING(perf_data);
 					HOSTFIELD_STRING(check_command);
@@ -841,8 +976,8 @@ int statusengine_handle_data(int event_type, void *data){
 
 					SERVICEFIELD_STRING(host_name);
 					SERVICEFIELD_STRING(description);
-					SERVICEFIELD_STRING(plugin_output);
-					SERVICEFIELD_STRING(long_plugin_output);
+					SERVICEFIELD_STRING_UTF8(plugin_output);
+					SERVICEFIELD_STRING_UTF8(long_plugin_output);
 					SERVICEFIELD_STRING(event_handler);
 					SERVICEFIELD_STRING(perf_data);
 					SERVICEFIELD_STRING(check_command);
@@ -936,8 +1071,8 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(servicecheck_object, "command_line", (raw_command != NULL ? json_object_new_string(raw_command) : NULL));
 					json_object_object_add(servicecheck_object, "command_name", (nag_service->check_command != NULL ? json_object_new_string(nag_service->check_command) : NULL));
 
-					SERVICECHECKFIELD_STRING(output);
-					SERVICECHECKFIELD_STRING(long_output);
+					SERVICECHECKFIELD_STRING_UTF8(output);
+					SERVICECHECKFIELD_STRING_UTF8(long_output);
 					SERVICECHECKFIELD_STRING(perf_data);
 					SERVICECHECKFIELD_INT(check_type);
 					SERVICECHECKFIELD_INT(current_attempt);
@@ -1025,8 +1160,8 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(hostcheck_object, "command_line", (raw_command != NULL ? json_object_new_string(raw_command) : NULL));
 					json_object_object_add(hostcheck_object, "command_name", (nag_host->check_command != NULL ? json_object_new_string(nag_host->check_command) : NULL));
 
-					HOSTCHECKFIELD_STRING(output);
-					HOSTCHECKFIELD_STRING(long_output);
+					HOSTCHECKFIELD_STRING_UTF8(output);
+					HOSTCHECKFIELD_STRING_UTF8(long_output);
 					HOSTCHECKFIELD_STRING(perf_data);
 					HOSTCHECKFIELD_INT(check_type);
 					HOSTCHECKFIELD_INT(current_attempt);

@@ -49,6 +49,10 @@
 * apt-get install libglib2.0-dev
 * LANG=C gcc -shared -o statusengine-naemon-1-0-5.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson-c -lglib-2.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -lglib-2.0 -DNAEMON105
 *
+* For Naemon >= 1.1.0 (eg Naemon 1.1.0) you need to install
+* apt-get install libglib2.0-dev
+* LANG=C gcc -shared -o statusengine-naemon-1-1-0.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson-c -lglib-2.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -lglib-2.0 -DNAEMON110
+*
 * For NAEMONMASTER you need to install
 * apt-get install libglib2.0-dev
 * LANG=C gcc -shared -o statusengine.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson-c -lglib-2.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -lglib-2.0 -DNAEMONMASTER
@@ -109,6 +113,20 @@
 #include "naemon-1-0-5/nebcallbacks.h"
 #include "naemon-1-0-5/nebstructs.h"
 #include "naemon-1-0-5/broker.h"
+
+#include "naemon-1-0-5/configuration.h"
+#include "naemon-1-0-5/common.h"
+#include "naemon-1-0-5/downtime.h"
+#include "naemon-1-0-5/comments.h"
+#include "naemon-1-0-5/macros.h"
+#endif
+
+#ifdef NAEMON110
+#include "naemon-1.1.0/naemon.h"
+#include "naemon-1.1.0/nebmodules.h"
+#include "naemon-1.1.0/nebcallbacks.h"
+#include "naemon-1.1.0/nebstructs.h"
+#include "naemon-1.1.0/broker.h"
 
 #include "naemon-1-0-5/configuration.h"
 #include "naemon-1-0-5/common.h"

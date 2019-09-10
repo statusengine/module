@@ -49,6 +49,10 @@
 * apt-get install libglib2.0-dev
 * LANG=C gcc -shared -o statusengine-naemon-1-0-5.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson-c -lglib-2.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -lglib-2.0 -DNAEMON105
 *
+* For Naemon >= 1.1.0 (eg Naemon 1.1.0) you need to install
+* apt-get install libglib2.0-dev
+* LANG=C gcc -shared -o statusengine-naemon-1-1-0.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson-c -lglib-2.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -lglib-2.0 -DNAEMON110
+*
 * For NAEMONMASTER you need to install
 * apt-get install libglib2.0-dev
 * LANG=C gcc -shared -o statusengine.o -fPIC  -Wall -Werror statusengine.c -luuid -levent -lgearman -ljson-c -lglib-2.0 -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -lglib-2.0 -DNAEMONMASTER
@@ -78,8 +82,8 @@
 *
 **********************************************************************************/
 
-#if !defined NAEMON && !defined NAGIOS && !defined NAEMON105 && !defined NAEMONMASTER
-#error Please define either NAEMON or NAGIOS using -DNAEMON or -DNAEMON105 or -DNAGIOS or -DNAEMONMASTER command line options.
+#if !defined NAEMON && !defined NAGIOS && !defined NAEMON105 && !defined NAEMONMASTER && !defined NAEMON110
+#error Please define either NAEMON or NAGIOS using -DNAEMON or -DNAEMON105 or -DNAGIOS or -DNAEMONMASTER or -DNAEMON110 command line options.
 #endif
 
 
@@ -98,7 +102,7 @@
 #include "naemon-1.0.3/macros.h"
 #endif
 
-#if defined NAEMON105 || defined NAEMONMASTER
+#if defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 //Load default event broker stuff
 #include <glib.h>
 #endif
@@ -109,6 +113,20 @@
 #include "naemon-1-0-5/nebcallbacks.h"
 #include "naemon-1-0-5/nebstructs.h"
 #include "naemon-1-0-5/broker.h"
+
+#include "naemon-1-0-5/configuration.h"
+#include "naemon-1-0-5/common.h"
+#include "naemon-1-0-5/downtime.h"
+#include "naemon-1-0-5/comments.h"
+#include "naemon-1-0-5/macros.h"
+#endif
+
+#ifdef NAEMON110
+#include "naemon-1.1.0/naemon.h"
+#include "naemon-1.1.0/nebmodules.h"
+#include "naemon-1.1.0/nebcallbacks.h"
+#include "naemon-1.1.0/nebstructs.h"
+#include "naemon-1.1.0/broker.h"
 
 #include "naemon-1-0-5/configuration.h"
 #include "naemon-1-0-5/common.h"
@@ -156,7 +174,7 @@
 #include <json-c/json.h>
 #endif
 
-#if defined NAEMON105 || defined NAEMON
+#if defined NAEMON105 || defined NAEMON || defined NAEMON110
 #include <string.h>
 #endif
 
@@ -236,12 +254,12 @@ void logswitch(int level, char *message, ...){
 #ifdef NAGIOS
 	logit(level, TRUE, "%s", buffer);
 #endif
-#if defined NAEMON || defined NAEMON105 || defined NAEMONMASTER
+#if defined NAEMON || defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 	nm_log(level, "%s", buffer);
 #endif
 }
 
-#if defined NAEMON105 || defined NAEMONMASTER
+#if defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 static gboolean parent_hosts_foreach_callback(gpointer _name, gpointer _hostsmember, gpointer _parent_hosts_array){
 	host *hostsmember = (host *)_hostsmember;
 	json_object *parent_hosts_array = (json_object *)_parent_hosts_array;
@@ -250,7 +268,7 @@ static gboolean parent_hosts_foreach_callback(gpointer _name, gpointer _hostsmem
 }
 #endif
 
-#if defined NAEMON105 || defined NAEMONMASTER
+#if defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 static gboolean hostgroup_foreach_callback(gpointer key, gpointer _hostgroupmember, gpointer _hostgroup_members_array){
         host *hostgroupmember = (host *)_hostgroupmember;
         json_object *hostgroup_members_array = (json_object *)_hostgroup_members_array;
@@ -383,7 +401,7 @@ int nebmodule_init(int flags, char *args, nebmodule *handle){
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_TITLE,   "Statusengine - the missing event broker");
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_AUTHOR,  "Daniel Ziegler");
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_TITLE,   "Copyright (c) 2014 - present Daniel Ziegler");
-	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_VERSION, "3.0.1");
+	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_VERSION, "3.0.2");
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_LICENSE, "GPL v2");
 	neb_set_module_info(statusengine_module_handle, NEBMODULE_MODINFO_DESC,    "A powerful and flexible event broker");
 
@@ -717,7 +735,7 @@ int statusengine_handle_data(int event_type, void *data){
 				json_object_object_add(my_object, "attr",      json_object_new_int(programmdata->attr));
 				json_object_object_add(my_object, "timestamp", json_object_new_int(programmdata->timestamp.tv_sec));
 				json_object *processdata_object = json_object_new_object();
-				#if defined NAEMON || defined NAEMON105 || defined NAEMONMASTER
+				#if defined NAEMON || defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 				json_object_object_add(processdata_object, "programmname",      json_object_new_string("Naemon"));
 				#else
 				json_object_object_add(processdata_object, "programmname",      json_object_new_string("Nagios"));
@@ -725,7 +743,7 @@ int statusengine_handle_data(int event_type, void *data){
 				#if defined NAGIOS || defined NAEMON
 					json_object_object_add(processdata_object, "modification_data", json_object_new_string(get_program_modification_date()));
 				#endif
-				#if defined NAEMON105 || defined NAEMONMASTER
+				#if defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 				json_object_object_add(processdata_object, "modification_data", json_object_new_string("removed"));
 				#endif
 				json_object_object_add(processdata_object, "programmversion",   json_object_new_string(get_program_version()));
@@ -773,7 +791,7 @@ int statusengine_handle_data(int event_type, void *data){
 					#if defined NAGIOS || defined NAEMON
 					HOSTFIELD_INT(should_be_scheduled);
 					#endif
-					#if defined NAEMON105 || defined NAEMONMASTER
+					#if defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 					json_object_object_add(host_object, "should_be_scheduled", json_object_new_int64(1));
 					#endif
 					HOSTFIELD_INT(current_attempt);
@@ -852,7 +870,7 @@ int statusengine_handle_data(int event_type, void *data){
 					#if defined NAGIOS || defined NAEMON
 					SERVICEFIELD_INT(should_be_scheduled);
 					#endif
-					#if defined NAEMON105 || defined NAEMONMASTER
+					#if defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 					json_object_object_add(service_object, "should_be_scheduled", json_object_new_int64(1));
 					#endif
 					SERVICEFIELD_INT(current_attempt);
@@ -930,7 +948,7 @@ int statusengine_handle_data(int event_type, void *data){
 					#if defined NAGIOS || defined NAEMON
 					get_raw_command_line(nag_service->check_command_ptr,nag_service->check_command,&raw_command,0);
 					#endif
-					#if defined NAEMON105 || defined NAEMONMASTER
+					#if defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 					get_raw_command_line_r(get_global_macros(),nag_service->check_command_ptr,nag_service->check_command,&raw_command,0);
 					#endif
 					json_object_object_add(servicecheck_object, "command_line", (raw_command != NULL ? json_object_new_string(raw_command) : NULL));
@@ -1019,7 +1037,7 @@ int statusengine_handle_data(int event_type, void *data){
 					#if defined NAGIOS || defined NAEMON
 					get_raw_command_line(nag_host->check_command_ptr,nag_host->check_command,&raw_command,0);
 					#endif
-					#if defined NAEMON105 || defined NAEMONMASTER
+					#if defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 					get_raw_command_line_r(get_global_macros(),nag_host->check_command_ptr,nag_host->check_command,&raw_command,0);
 					#endif
 					json_object_object_add(hostcheck_object, "command_line", (raw_command != NULL ? json_object_new_string(raw_command) : NULL));
@@ -1885,7 +1903,7 @@ void dump_object_data(){
 		}
 		#endif
 
-		#if defined NAEMON105 || defined NAEMONMASTER
+		#if defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 		g_tree_foreach(temp_host->parent_hosts, parent_hosts_foreach_callback, parent_hosts_array);
 		#endif
 
@@ -1938,7 +1956,7 @@ void dump_object_data(){
 			json_object_array_add(hostgroup_members_array, (temp_hostsmember->host_name != NULL ? json_object_new_string(temp_hostsmember->host_name) : NULL));
 		}
 		#endif
-		#if defined NAEMON105 || defined NAEMONMASTER
+		#if defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 		g_tree_foreach(temp_hostgroup->members, hostgroup_foreach_callback, hostgroup_members_array);
 		#endif
 

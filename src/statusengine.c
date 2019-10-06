@@ -753,7 +753,6 @@ int statusengine_handle_data(int event_type, void *data){
 				const char* json_string = json_object_to_json_string(my_object);
 				statusengine_send_job("statusngin_processdata", (void *)json_string);
 
-				json_object_put(processdata_object);
 				json_object_put(my_object);
 			}
 
@@ -832,7 +831,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_hoststatus", (void *)json_string);
 
-					json_object_put(host_object);
 					json_object_put(my_object);
 
 				}
@@ -912,7 +910,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_servicestatus", (void *)json_string);
 
-					json_object_put(service_object);
 					json_object_put(my_object);
 
 				}
@@ -980,7 +977,6 @@ int statusengine_handle_data(int event_type, void *data){
 					if(enable_ocsp)
 						statusengine_send_job("statusngin_ocsp", (void *)json_string);
 
-					json_object_put(servicecheck_object);
 					json_object_put(my_object);
 					free(raw_command);
 
@@ -1001,7 +997,6 @@ int statusengine_handle_data(int event_type, void *data){
 						const char* json_string = json_object_to_json_string(my_object);
 						statusengine_send_job("statusngin_service_perfdata", (void *)json_string);
 
-						json_object_put(servicecheck_object);
 						json_object_put(my_object);
 					}
 
@@ -1069,7 +1064,6 @@ int statusengine_handle_data(int event_type, void *data){
 					if(enable_ochp)
 						statusengine_send_job("statusngin_ochp", (void *)json_string);
 
-					json_object_put(hostcheck_object);
 					json_object_put(my_object);
 					free(raw_command);
 
@@ -1128,7 +1122,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_statechanges", (void *)json_string);
 
-					json_object_put(statechange_object);
 					json_object_put(my_object);
 				}
 				break;
@@ -1159,7 +1152,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_logentries", (void *)json_string);
 
-					json_object_put(logentry_object);
 					json_object_put(my_object);
 				}
 				break;
@@ -1195,7 +1187,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_systemcommands", (void *)json_string);
 
-					json_object_put(systemcommand_object);
 					json_object_put(my_object);
 				}
 				break;
@@ -1232,7 +1223,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_comments", (void *)json_string);
 
-					json_object_put(comment_object);
 					json_object_put(my_object);
 				}
 				break;
@@ -1259,7 +1249,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_externalcommands", (void *)json_string);
 
-					json_object_put(extcommand_object);
 					json_object_put(my_object);
 				}
 				break;
@@ -1292,7 +1281,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_acknowledgements", (void *)json_string);
 
-					json_object_put(acknowledgement_object);
 					json_object_put(my_object);
 				}
 				break;
@@ -1341,7 +1329,6 @@ int statusengine_handle_data(int event_type, void *data){
 					//I'm not very happy with this queue name....
 					statusengine_send_job("statusngin_flappings", (void *)json_string);
 
-					json_object_put(flapping_object);
 					json_object_put(my_object);
 				}
 				break;
@@ -1380,7 +1367,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_downtimes", (void *)json_string);
 
-					json_object_put(downtime_object);
 					json_object_put(my_object);
 				}
 				break;
@@ -1419,7 +1405,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_notifications", (void *)json_string);
 
-					json_object_put(notification_data_object);
 					json_object_put(my_object);
 
 				}
@@ -1466,7 +1451,6 @@ int statusengine_handle_data(int event_type, void *data){
 					const char* json_string = json_object_to_json_string(my_object);
 					statusengine_send_job("statusngin_programmstatus", (void *)json_string);
 
-					json_object_put(programmstatus_object);
 					json_object_put(my_object);
 				}
 				break;
@@ -1502,7 +1486,6 @@ int statusengine_handle_data(int event_type, void *data){
 						const char* json_string = json_object_to_json_string(my_object);
 						statusengine_send_job("statusngin_contactstatus", (void *)json_string);
 
-						json_object_put(contactstatus_object);
 						json_object_put(my_object);
 					}
 					break;
@@ -1539,7 +1522,6 @@ int statusengine_handle_data(int event_type, void *data){
 						const char* json_string = json_object_to_json_string(my_object);
 						statusengine_send_job("statusngin_contactnotificationdata", (void *)json_string);
 
-						json_object_put(cnd_object);
 						json_object_put(my_object);
 					}
 					break;
@@ -1575,7 +1557,6 @@ int statusengine_handle_data(int event_type, void *data){
 						const char* json_string = json_object_to_json_string(my_object);
 						statusengine_send_job("statusngin_contactnotificationmethod", (void *)json_string);
 
-						json_object_put(cnm_object);
 						json_object_put(my_object);
 					}
 					break;
@@ -1616,7 +1597,6 @@ int statusengine_handle_data(int event_type, void *data){
 						const char* json_string = json_object_to_json_string(my_object);
 						statusengine_send_job("statusngin_eventhandler", (void *)json_string);
 
-						json_object_put(ehd_object);
 						json_object_put(my_object);
 					}
 					break;

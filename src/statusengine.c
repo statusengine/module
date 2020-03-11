@@ -734,6 +734,7 @@ int statusengine_handle_data(int event_type, void *data){
 				json_object_object_add(my_object, "flags",     json_object_new_int(programmdata->flags));
 				json_object_object_add(my_object, "attr",      json_object_new_int(programmdata->attr));
 				json_object_object_add(my_object, "timestamp", json_object_new_int(programmdata->timestamp.tv_sec));
+				json_object_object_add(my_object, "usec",      json_object_new_int(programmdata->timestamp.tv_usec));
 				json_object *processdata_object = json_object_new_object();
 				#if defined NAEMON || defined NAEMON105 || defined NAEMONMASTER || defined NAEMON110
 				json_object_object_add(processdata_object, "programmname",      json_object_new_string("Naemon"));
@@ -770,6 +771,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(hoststatusdata->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(hoststatusdata->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(hoststatusdata->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(hoststatusdata->timestamp.tv_usec));
 
 					json_object *host_object = json_object_new_object();
 					host *nag_hoststatus = (host *)hoststatusdata->object_ptr;
@@ -847,6 +849,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(servicestatusdata->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(servicestatusdata->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(servicestatusdata->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(servicestatusdata->timestamp.tv_usec));
 
 					json_object *service_object = json_object_new_object();
 					service *nag_servicestatus = (service *)servicestatusdata->object_ptr;
@@ -934,6 +937,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(servicecheck->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(servicecheck->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(servicecheck->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(servicecheck->timestamp.tv_usec));
 
 					json_object *servicecheck_object = json_object_new_object();
 					nebstruct_service_check_data *nag_servicecheck = servicecheck;
@@ -986,6 +990,7 @@ int statusengine_handle_data(int event_type, void *data){
 						json_object_object_add(my_object, "flags",     json_object_new_int(servicecheck->flags));
 						json_object_object_add(my_object, "attr",      json_object_new_int(servicecheck->attr));
 						json_object_object_add(my_object, "timestamp", json_object_new_int(servicecheck->timestamp.tv_sec));
+						json_object_object_add(my_object, "usec",      json_object_new_int(servicecheck->timestamp.tv_usec));
 
 						json_object *servicecheck_object = json_object_new_object();
 						SERVICECHECKFIELD_STRING(host_name);
@@ -1022,6 +1027,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(hostcheck->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(hostcheck->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(hostcheck->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(hostcheck->timestamp.tv_usec));
 
 					json_object *hostcheck_object = json_object_new_object();
 					nebstruct_host_check_data *nag_hostcheck = hostcheck;
@@ -1081,6 +1087,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(statechange->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(statechange->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(statechange->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(statechange->timestamp.tv_usec));
 
 					json_object *statechange_object = json_object_new_object();
 
@@ -1141,6 +1148,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(logentry->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(logentry->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(logentry->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(logentry->timestamp.tv_usec));
 
 					json_object *logentry_object = json_object_new_object();
 
@@ -1167,6 +1175,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(systemcommand->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(systemcommand->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(systemcommand->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(systemcommand->timestamp.tv_usec));
 
 					json_object *systemcommand_object = json_object_new_object();
 
@@ -1203,6 +1212,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(_comment->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(_comment->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(_comment->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(_comment->timestamp.tv_usec));
 
 					json_object *comment_object = json_object_new_object();
 					json_object_object_add(comment_object, "host_name",           (_comment->host_name           != NULL ? json_object_new_string(_comment->host_name) : NULL));
@@ -1238,6 +1248,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(extcommand->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(extcommand->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(extcommand->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(extcommand->timestamp.tv_usec));
 
 					json_object *extcommand_object = json_object_new_object();
 					json_object_object_add(extcommand_object, "command_string", (extcommand->command_string != NULL ? json_object_new_string(extcommand->command_string) : NULL));
@@ -1264,6 +1275,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(acknowledgement->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(acknowledgement->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(acknowledgement->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(acknowledgement->timestamp.tv_usec));
 
 					json_object *acknowledgement_object = json_object_new_object();
 					json_object_object_add(acknowledgement_object, "host_name",           (acknowledgement->host_name           != NULL ? json_object_new_string(acknowledgement->host_name) : NULL));
@@ -1296,6 +1308,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(_flapping->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(_flapping->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(_flapping->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(_flapping->timestamp.tv_usec));
 
 					json_object *flapping_object = json_object_new_object();
 					json_object_object_add(flapping_object, "host_name",           (_flapping->host_name           != NULL ? json_object_new_string(_flapping->host_name) : NULL));
@@ -1344,6 +1357,8 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(_downtime->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(_downtime->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(_downtime->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(_downtime->timestamp.tv_usec));
+
 
 					json_object *downtime_object = json_object_new_object();
 					json_object_object_add(downtime_object, "host_name",           (_downtime->host_name           != NULL ? json_object_new_string(_downtime->host_name) : NULL));
@@ -1382,6 +1397,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(notificationdata->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(notificationdata->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(notificationdata->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(notificationdata->timestamp.tv_usec));
 
 					json_object *notification_data_object = json_object_new_object();
 					json_object_object_add(notification_data_object, "host_name",           (notificationdata->host_name           != NULL ? json_object_new_string(notificationdata->host_name) : NULL));
@@ -1421,6 +1437,7 @@ int statusengine_handle_data(int event_type, void *data){
 					json_object_object_add(my_object, "flags",     json_object_new_int(procstats->flags));
 					json_object_object_add(my_object, "attr",      json_object_new_int(procstats->attr));
 					json_object_object_add(my_object, "timestamp", json_object_new_int(procstats->timestamp.tv_sec));
+					json_object_object_add(my_object, "usec",      json_object_new_int(procstats->timestamp.tv_usec));
 
 					json_object *programmstatus_object = json_object_new_object();
 					json_object_object_add(programmstatus_object, "global_host_event_handler",    (procstats->global_host_event_handler != NULL ? json_object_new_string(procstats->global_host_event_handler) : NULL));
@@ -1470,6 +1487,7 @@ int statusengine_handle_data(int event_type, void *data){
 						json_object_object_add(my_object, "flags",     json_object_new_int(contactstatus->flags));
 						json_object_object_add(my_object, "attr",      json_object_new_int(contactstatus->attr));
 						json_object_object_add(my_object, "timestamp", json_object_new_int(contactstatus->timestamp.tv_sec));
+						json_object_object_add(my_object, "usec",      json_object_new_int(contactstatus->timestamp.tv_usec));
 
 						json_object *contactstatus_object = json_object_new_object();
 						json_object_object_add(contactstatus_object, "contact_name", (tmp_contact->name != NULL ? json_object_new_string(tmp_contact->name) : NULL));
@@ -1501,6 +1519,7 @@ int statusengine_handle_data(int event_type, void *data){
 						json_object_object_add(my_object, "flags",     json_object_new_int(cnd->flags));
 						json_object_object_add(my_object, "attr",      json_object_new_int(cnd->attr));
 						json_object_object_add(my_object, "timestamp", json_object_new_int(cnd->timestamp.tv_sec));
+						json_object_object_add(my_object, "usec",      json_object_new_int(cnd->timestamp.tv_usec));
 
 						json_object *cnd_object = json_object_new_object();
 						json_object_object_add(cnd_object, "host_name", (cnd->host_name != NULL ? json_object_new_string(cnd->host_name) : NULL));
@@ -1537,6 +1556,7 @@ int statusengine_handle_data(int event_type, void *data){
 						json_object_object_add(my_object, "flags",     json_object_new_int(cnm->flags));
 						json_object_object_add(my_object, "attr",      json_object_new_int(cnm->attr));
 						json_object_object_add(my_object, "timestamp", json_object_new_int(cnm->timestamp.tv_sec));
+						json_object_object_add(my_object, "usec",      json_object_new_int(cnm->timestamp.tv_usec));
 
 						json_object *cnm_object = json_object_new_object();
 						json_object_object_add(cnm_object, "host_name",           (cnm->host_name           != NULL ? json_object_new_string(cnm->host_name) : NULL));
@@ -1572,6 +1592,7 @@ int statusengine_handle_data(int event_type, void *data){
 						json_object_object_add(my_object, "flags",     json_object_new_int(event_handler_data->flags));
 						json_object_object_add(my_object, "attr",      json_object_new_int(event_handler_data->attr));
 						json_object_object_add(my_object, "timestamp", json_object_new_int(event_handler_data->timestamp.tv_sec));
+						json_object_object_add(my_object, "usec",      json_object_new_int(event_handler_data->timestamp.tv_usec));
 
 						json_object *ehd_object = json_object_new_object();
 						json_object_object_add(ehd_object, "host_name",           (event_handler_data->host_name           != NULL ? json_object_new_string(event_handler_data->host_name) : NULL));
